@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar">
+      <div class="flex items-center gap-3">
+        <button id="mobile-sidebar-btn" class="lg:hidden p-2 -ml-2"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <h1 class="font-display font-semibold text-lg">Dashboard</h1>
+      </div>
+      <a href="/index.html" target="_blank" class="text-sm text-[var(--muted)] hover:text-blue-600 inline-flex items-center gap-1.5">View Website <i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>
+    </header>
+
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading dashboard…</div>
+
+    <main id="admin-main" class="admin-content hidden">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" id="stat-cards"></div>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-display font-semibold">Recent Messages</h2>
+            <a href="/admin/messages.html" class="text-sm text-blue-600 font-semibold">View all</a>
+          </div>
+          <div id="recent-messages" class="space-y-3"></div>
+        </div>
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-display font-semibold">Recent Applications</h2>
+            <a href="/admin/applications.html" class="text-sm text-blue-600 font-semibold">View all</a>
+          </div>
+          <div id="recent-applications" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="card p-6 mt-6">
+        <h2 class="font-display font-semibold mb-4">Quick Actions</h2>
+        <div class="flex flex-wrap gap-3">
+          <a href="/admin/resource.html?type=projects&new=1" class="btn btn-outline btn-sm"><i data-lucide="plus" class="w-4 h-4"></i> New Project</a>
+          <a href="/admin/resource.html?type=blog&new=1" class="btn btn-outline btn-sm"><i data-lucide="plus" class="w-4 h-4"></i> New Blog Post</a>
+          <a href="/admin/resource.html?type=services&new=1" class="btn btn-outline btn-sm"><i data-lucide="plus" class="w-4 h-4"></i> New Service</a>
+          <a href="/admin/resource.html?type=careers&new=1" class="btn btn-outline btn-sm"><i data-lucide="plus" class="w-4 h-4"></i> New Job</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  function timeAgo(dateStr) {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  }
+
+  (async () => {
+    await renderAdminShell("dashboard");
+    try {
+      const { data } = await adminGet("/admin/dashboard");
+
+      const cards = [
+        { label: "Projects", value: data.projects, icon: "folder-kanban" },
+        { label: "Services", value: data.services, icon: "code-2" },
+        { label: "Blog Posts", value: data.blogPosts, icon: "newspaper" },
+        { label: "Published Jobs", value: data.publishedCareers, icon: "briefcase" },
+        { label: "New Messages", value: data.newMessages, icon: "mail" },
+        { label: "New Applications", value: data.newApplications, icon: "file-user" },
+        { label: "Open Support Requests", value: data.openSupportRequests, icon: "life-buoy" },
+        { label: "Products", value: data.products, icon: "package" }
+      ];
+      document.getElementById("stat-cards").innerHTML = cards.map(c => `
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-[var(--muted)]">${c.label}</span>
+            <i data-lucide="${c.icon}" class="w-4 h-4 text-blue-500"></i>
+          </div>
+          <p class="stat-value">${c.value}</p>
+        </div>`).join("");
+
+      const msgEl = document.getElementById("recent-messages");
+      msgEl.innerHTML = data.recentMessages.length ? data.recentMessages.map(m => `
+        <a href="/admin/messages.html?id=${m.id}" class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 -mx-2 px-2 rounded">
+          <div class="min-w-0">
+            <p class="text-sm font-medium truncate">${m.name}</p>
+            <p class="text-xs text-[var(--muted)] truncate">${m.subject || "No subject"}</p>
+          </div>
+          <span class="text-xs text-[var(--muted)] flex-shrink-0 ml-3">${timeAgo(m.created_at)}</span>
+        </a>`).join("") : `<p class="text-sm text-[var(--muted)]">No messages yet.</p>`;
+
+      const appEl = document.getElementById("recent-applications");
+      appEl.innerHTML = data.recentApplications.length ? data.recentApplications.map(a => `
+        <a href="/admin/applications.html?id=${a.id}" class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 -mx-2 px-2 rounded">
+          <div class="min-w-0">
+            <p class="text-sm font-medium truncate">${a.applicant_name}</p>
+            <p class="text-xs text-[var(--muted)] truncate">${a.position_title || "—"}</p>
+          </div>
+          <span class="text-xs text-[var(--muted)] flex-shrink-0 ml-3">${timeAgo(a.created_at)}</span>
+        </a>`).join("") : `<p class="text-sm text-[var(--muted)]">No applications yet.</p>`;
+
+      lucide.createIcons();
+    } catch (err) {
+      document.getElementById("admin-main").innerHTML = `<div class="card p-8 text-center text-red-600">Something went wrong loading the dashboard: ${err.message}</div>`;
+    }
+  })();
+</script>
+</body>
+</html>

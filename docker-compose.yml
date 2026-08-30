@@ -1,0 +1,22 @@
+# Optional convenience file: spins up a local PostgreSQL instance for
+# development. Not required if you already have PostgreSQL installed, or
+# are using a hosted database (Supabase, Neon, RDS, etc).
+#
+# Usage:
+#   docker compose up -d
+#   # then set DATABASE_URL=postgres://thutechcom:changeme@localhost:5432/thutechcom in server/.env
+version: "3.8"
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: thutechcom
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: thutechcom
+    ports:
+      - "5432:5432"
+    volumes:
+      - thutechcom_pgdata:/var/lib/postgresql/data
+volumes:
+  thutechcom_pgdata:

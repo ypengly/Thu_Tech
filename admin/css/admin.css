@@ -1,0 +1,74 @@
+/* ==========================================================================
+   THU TECH COM ADMIN — LAYOUT STYLES
+   Loaded together with /css/style.css (same design tokens: brand colors,
+   fonts, .btn/.card/.field-input components) so the admin dashboard shares
+   one visual identity with the public site.
+   ========================================================================== */
+
+body.admin-body {
+  background: var(--bg-light);
+  min-height: 100vh;
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+@media (max-width: 900px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  #admin-shell { display: none; }
+  #admin-shell.open { display: flex; position: fixed; inset: 0; z-index: 60; width: 260px; }
+}
+
+#admin-shell {
+  background: #0B1220;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+#admin-topbar {
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.admin-content { padding: 1.75rem; max-width: 1280px; }
+
+.admin-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.admin-table th { text-align: left; font-weight: 600; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: .04em; padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
+.admin-table td { padding: .85rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.admin-table tr:hover td { background: #FAFBFF; }
+
+.status-pill { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: .25rem .6rem; border-radius: 999px; }
+.status-published { background: #DCFCE7; color: #166534; }
+.status-draft { background: #FEF3C7; color: #92400E; }
+.status-closed, .status-archived { background: #F3F4F6; color: #6B7280; }
+.status-new { background: #DBEAFE; color: #1E40AF; }
+.status-read { background: #F3F4F6; color: #374151; }
+.status-replied { background: #DCFCE7; color: #166534; }
+.status-open { background: #FEE2E2; color: #991B1B; }
+.status-in_progress { background: #FEF3C7; color: #92400E; }
+.status-resolved, .status-closed { background: #DCFCE7; color: #166534; }
+.status-high { background: #FEE2E2; color: #991B1B; }
+.status-medium { background: #FEF3C7; color: #92400E; }
+.status-low { background: #F3F4F6; color: #374151; }
+
+.stat-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.5rem; }
+.stat-card .stat-value { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.75rem; }
+
+.admin-modal-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.5); z-index: 70; display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 2rem 1rem; }
+.admin-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 720px; box-shadow: var(--shadow-lg); }
+
+.list-repeater-row { display: flex; gap: .5rem; align-items: flex-start; margin-bottom: .5rem; }
+.list-repeater-row textarea, .list-repeater-row input { flex: 1; }

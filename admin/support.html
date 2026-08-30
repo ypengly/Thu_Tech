@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Support Requests | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar"><h1 class="font-display font-semibold text-lg">Support Requests</h1></header>
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading…</div>
+    <main id="admin-main" class="admin-content hidden">
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <select id="status-filter" class="field-input" style="width:auto">
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In Progress</option>
+          <option value="waiting">Waiting</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+        <select id="priority-filter" class="field-input" style="width:auto">
+          <option value="">All priorities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="admin-table">
+          <thead><tr><th>Name</th><th>Product / Service</th><th>Priority</th><th>Received</th><th>Status</th><th></th></tr></thead>
+          <tbody id="requests-body"></tbody>
+        </table>
+      </div>
+      <div id="requests-empty" class="hidden text-center py-16 text-[var(--muted)]">No support requests yet.</div>
+    </main>
+  </div>
+</div>
+
+<div id="detail-overlay" class="admin-modal-overlay hidden"><div class="admin-modal" id="detail-modal"></div></div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  function fmtDate(d) { return new Date(d).toLocaleString(); }
+  const STATUSES = ["open", "in_progress", "waiting", "resolved", "closed"];
+
+  async function loadRequests() {
+    const status = document.getElementById("status-filter").value;
+    const priority = document.getElementById("priority-filter").value;
+    const params = new URLSearchParams({ pageSize: 50 });
+    if (status) params.set("status", status);
+    if (priority) params.set("priority", priority);
+    const { data } = await adminGet(`/admin/support-requests?${params.toString()}`);
+    const body = document.getElementById("requests-body");
+    document.getElementById("requests-empty").classList.toggle("hidden", data.length > 0);
+    body.innerHTML = data.map((r) => `
+      <tr class="cursor-pointer view-row" data-id="${r.id}">
+        <td class="font-medium">${r.name}</td>
+        <td>${r.product_service || "—"}</td>
+        <td><span class="status-pill status-${r.priority}">${r.priority}</span></td>
+        <td>${fmtDate(r.created_at)}</td>
+        <td><span class="status-pill status-${r.status}">${r.status.replace("_", " ")}</span></td>
+        <td class="text-right"><button class="text-xs text-red-600 hover:underline delete-btn" data-id="${r.id}">Delete</button></td>
+      </tr>`).join("");
+  }
+
+  async function openRequest(id) {
+    const { data: r } = await adminGet(`/admin/support-requests/${id}`);
+    const modal = document.getElementById("detail-modal");
+    modal.innerHTML = `
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 class="font-display font-semibold text-lg">Support Request — ${r.name}</h2>
+        <button id="detail-close-btn" class="p-1.5 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-3 text-sm">
+        <p><strong>Email:</strong> <a href="mailto:${r.email}" class="text-blue-600">${r.email}</a></p>
+        ${r.phone ? `<p><strong>Phone:</strong> ${r.phone}</p>` : ""}
+        ${r.company ? `<p><strong>Company:</strong> ${r.company}</p>` : ""}
+        <p><strong>Product/Service:</strong> ${r.product_service || "—"}</p>
+        <p><strong>Priority:</strong> <span class="status-pill status-${r.priority}">${r.priority}</span></p>
+        <div class="mt-4 p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">${r.message}</div>
+        <div class="mt-4">
+          <label class="field-label">Status</label>
+          <select id="req-status-select" class="field-input">
+            ${STATUSES.map((s) => `<option value="${s}" ${s === r.status ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+        <a href="mailto:${r.email}" class="btn btn-outline btn-sm">Reply by Email</a>
+        <button id="save-status-btn" class="btn btn-primary btn-sm">Save Status</button>
+      </div>`;
+    document.getElementById("detail-overlay").classList.remove("hidden");
+    initIcons();
+    document.getElementById("detail-close-btn").addEventListener("click", closeDetail);
+    document.getElementById("save-status-btn").addEventListener("click", async () => {
+      const status = document.getElementById("req-status-select").value;
+      await adminPatch(`/admin/support-requests/${id}/status`, { status });
+      adminToast("Status updated.");
+      closeDetail();
+      loadRequests();
+    });
+  }
+  function closeDetail() { document.getElementById("detail-overlay").classList.add("hidden"); }
+
+  (async () => {
+    await renderAdminShell("support");
+    await loadRequests();
+    document.getElementById("status-filter").addEventListener("change", loadRequests);
+    document.getElementById("priority-filter").addEventListener("change", loadRequests);
+    document.getElementById("detail-overlay").addEventListener("click", (e) => { if (e.target.id === "detail-overlay") closeDetail(); });
+    document.getElementById("requests-body").addEventListener("click", async (e) => {
+      const delBtn = e.target.closest(".delete-btn");
+      if (delBtn) {
+        e.stopPropagation();
+        if (!confirm("Delete this request?")) return;
+        await adminDelete(`/admin/support-requests/${delBtn.dataset.id}`);
+        adminToast("Deleted.");
+        loadRequests();
+        return;
+      }
+      const row = e.target.closest(".view-row");
+      if (row) openRequest(row.dataset.id);
+    });
+  })();
+</script>
+</body>
+</html>

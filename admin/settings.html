@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Company Settings | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar">
+      <h1 class="font-display font-semibold text-lg">Company Settings</h1>
+      <button id="export-btn" class="btn btn-outline btn-sm"><i data-lucide="download" class="w-4 h-4"></i> Export Content (JSON)</button>
+    </header>
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading…</div>
+    <main id="admin-main" class="admin-content hidden max-w-3xl">
+      <form id="settings-form" class="space-y-8">
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">Company Info</h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="field-label">Company Name</label><input class="field-input" data-field="name" /></div>
+            <div><label class="field-label">Founded Year</label><input class="field-input" type="number" data-field="founded_year" /></div>
+          </div>
+          <div><label class="field-label">Tagline</label><input class="field-input" data-field="tagline" /></div>
+          <div><label class="field-label">Description</label><textarea class="field-input" rows="3" data-field="description"></textarea></div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">Contact Details</h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="field-label">Email</label><input class="field-input" data-field="email" /></div>
+            <div><label class="field-label">Support Email</label><input class="field-input" data-field="support_email" /></div>
+            <div><label class="field-label">Phone</label><input class="field-input" data-field="phone" /></div>
+            <div><label class="field-label">Business Hours</label><input class="field-input" data-field="hours" /></div>
+          </div>
+          <div><label class="field-label">Address</label><input class="field-input" data-field="address" /></div>
+          <div><label class="field-label">Website</label><input class="field-input" data-field="website" /></div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">Social Media Links</h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="field-label">Facebook</label><input class="field-input" data-field="social_facebook" /></div>
+            <div><label class="field-label">Telegram</label><input class="field-input" data-field="social_telegram" /></div>
+            <div><label class="field-label">LinkedIn</label><input class="field-input" data-field="social_linkedin" /></div>
+            <div><label class="field-label">TikTok</label><input class="field-input" data-field="social_tiktok" /></div>
+            <div><label class="field-label">YouTube</label><input class="field-input" data-field="social_youtube" /></div>
+          </div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">Branding</h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="field-label">Logo URL</label><input class="field-input" data-field="logo_url" /></div>
+            <div><label class="field-label">Favicon URL</label><input class="field-input" data-field="favicon_url" /></div>
+          </div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">About Page Content</h2>
+          <div><label class="field-label">Mission</label><textarea class="field-input" rows="2" data-field="mission"></textarea></div>
+          <div><label class="field-label">Vision</label><textarea class="field-input" rows="2" data-field="vision"></textarea></div>
+          <div><label class="field-label">Company Story</label><textarea class="field-input" rows="4" data-field="story"></textarea></div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">Footer &amp; Copyright</h2>
+          <div><label class="field-label">Footer Note</label><input class="field-input" data-field="footer_note" /></div>
+          <div><label class="field-label">Copyright Text</label><input class="field-input" data-field="copyright_text" /></div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h2 class="font-display font-semibold text-lg">SEO Defaults</h2>
+          <div><label class="field-label">Default SEO Title</label><input class="field-input" data-field="seo_default_title" /></div>
+          <div><label class="field-label">Default SEO Description</label><textarea class="field-input" rows="2" data-field="seo_default_description"></textarea></div>
+          <div><label class="field-label">Default Open Graph Image URL</label><input class="field-input" data-field="og_default_image_url" /></div>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  (async () => {
+    await renderAdminShell("settings");
+    const form = document.getElementById("settings-form");
+
+    const { data } = await adminGet("/admin/settings");
+    form.querySelectorAll("[data-field]").forEach((el) => {
+      el.value = data[el.dataset.field] ?? "";
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {};
+      form.querySelectorAll("[data-field]").forEach((el) => { payload[el.dataset.field] = el.value; });
+      const saveBtn = form.querySelector("button[type=submit]");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving…";
+      try {
+        await adminPut("/admin/settings", payload);
+        adminToast("Settings saved successfully. Changes are live on the website immediately.");
+      } catch (err) {
+        adminToast(err.message, true);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Settings";
+      }
+    });
+
+    document.getElementById("export-btn").addEventListener("click", async () => {
+      window.location.href = "/api/admin/settings/export";
+    });
+  })();
+</script>
+</body>
+</html>

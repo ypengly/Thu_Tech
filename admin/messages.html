@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact Messages | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar"><h1 class="font-display font-semibold text-lg">Contact Messages</h1></header>
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading…</div>
+    <main id="admin-main" class="admin-content hidden">
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <select id="status-filter" class="field-input" style="width:auto">
+          <option value="">All statuses</option>
+          <option value="new">New</option>
+          <option value="read">Read</option>
+          <option value="replied">Replied</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="admin-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Service</th><th>Received</th><th>Status</th><th></th></tr></thead>
+          <tbody id="messages-body"></tbody>
+        </table>
+      </div>
+      <div id="messages-empty" class="hidden text-center py-16 text-[var(--muted)]">No messages yet.</div>
+    </main>
+  </div>
+</div>
+
+<div id="detail-overlay" class="admin-modal-overlay hidden">
+  <div class="admin-modal" id="detail-modal"></div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  function fmtDate(d) { return new Date(d).toLocaleString(); }
+
+  async function loadMessages() {
+    const status = document.getElementById("status-filter").value;
+    const params = new URLSearchParams({ pageSize: 50 });
+    if (status) params.set("status", status);
+    const { data } = await adminGet(`/admin/messages?${params.toString()}`);
+    const body = document.getElementById("messages-body");
+    document.getElementById("messages-empty").classList.toggle("hidden", data.length > 0);
+    body.innerHTML = data.map((m) => `
+      <tr class="cursor-pointer view-msg-row" data-id="${m.id}">
+        <td class="font-medium">${m.name}</td>
+        <td>${m.email}</td>
+        <td>${m.service || "—"}</td>
+        <td>${fmtDate(m.created_at)}</td>
+        <td><span class="status-pill status-${m.status}">${m.status}</span></td>
+        <td class="text-right"><button class="text-xs text-red-600 hover:underline delete-msg-btn" data-id="${m.id}">Delete</button></td>
+      </tr>`).join("");
+  }
+
+  async function openMessage(id) {
+    const { data: m } = await adminGet(`/admin/messages/${id}`);
+    const modal = document.getElementById("detail-modal");
+    modal.innerHTML = `
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 class="font-display font-semibold text-lg">Message from ${m.name}</h2>
+        <button id="detail-close-btn" class="p-1.5 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-3 text-sm">
+        <p><strong>Email:</strong> <a href="mailto:${m.email}" class="text-blue-600">${m.email}</a></p>
+        ${m.phone ? `<p><strong>Phone:</strong> ${m.phone}</p>` : ""}
+        ${m.company ? `<p><strong>Company:</strong> ${m.company}</p>` : ""}
+        ${m.service ? `<p><strong>Service:</strong> ${m.service}</p>` : ""}
+        <p><strong>Received:</strong> ${fmtDate(m.created_at)}</p>
+        <div class="mt-4 p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">${m.message}</div>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-100 flex flex-wrap gap-2">
+        <button class="btn btn-outline btn-sm set-status-btn" data-status="replied">Mark Replied</button>
+        <button class="btn btn-outline btn-sm set-status-btn" data-status="archived">Archive</button>
+        <a href="mailto:${m.email}" class="btn btn-primary btn-sm ml-auto">Reply by Email</a>
+      </div>`;
+    document.getElementById("detail-overlay").classList.remove("hidden");
+    initIcons();
+    document.getElementById("detail-close-btn").addEventListener("click", closeDetail);
+    modal.querySelectorAll(".set-status-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await adminPatch(`/admin/messages/${id}/status`, { status: btn.dataset.status });
+        adminToast("Status updated.");
+        closeDetail();
+        loadMessages();
+      });
+    });
+  }
+  function closeDetail() { document.getElementById("detail-overlay").classList.add("hidden"); }
+
+  (async () => {
+    await renderAdminShell("messages");
+    await loadMessages();
+
+    document.getElementById("status-filter").addEventListener("change", loadMessages);
+    document.getElementById("detail-overlay").addEventListener("click", (e) => { if (e.target.id === "detail-overlay") closeDetail(); });
+
+    document.getElementById("messages-body").addEventListener("click", async (e) => {
+      const delBtn = e.target.closest(".delete-msg-btn");
+      if (delBtn) {
+        e.stopPropagation();
+        if (!confirm("Delete this message?")) return;
+        await adminDelete(`/admin/messages/${delBtn.dataset.id}`);
+        adminToast("Deleted.");
+        loadMessages();
+        return;
+      }
+      const row = e.target.closest(".view-msg-row");
+      if (row) openMessage(row.dataset.id);
+    });
+
+    const deepLinkId = new URLSearchParams(window.location.search).get("id");
+    if (deepLinkId) openMessage(deepLinkId);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Media Library | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar">
+      <h1 class="font-display font-semibold text-lg">Media Library</h1>
+      <label class="btn btn-primary btn-sm cursor-pointer">
+        <i data-lucide="upload" class="w-4 h-4"></i> Upload
+        <input type="file" id="media-upload-input" accept="image/*" class="hidden" />
+      </label>
+    </header>
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading…</div>
+    <main id="admin-main" class="admin-content hidden">
+      <div class="relative max-w-xs mb-5">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input id="media-search" type="text" placeholder="Search filenames..." class="field-input pl-9" />
+      </div>
+      <div id="media-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      <div id="media-empty" class="hidden text-center py-16 text-[var(--muted)]">No media uploaded yet.</div>
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  async function loadMedia() {
+    const search = document.getElementById("media-search").value;
+    const params = new URLSearchParams({ pageSize: 60 });
+    if (search) params.set("search", search);
+    const { data } = await adminGet(`/admin/media?${params.toString()}`);
+    const grid = document.getElementById("media-grid");
+    document.getElementById("media-empty").classList.toggle("hidden", data.length > 0);
+    grid.innerHTML = data.map((m) => `
+      <div class="card overflow-hidden group relative">
+        <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+          <img src="${m.url}" alt="${m.alt_text || m.filename}" class="w-full h-full object-cover" loading="lazy" />
+        </div>
+        <div class="p-2">
+          <p class="text-xs truncate" title="${m.filename}">${m.filename}</p>
+          <p class="text-[10px] text-[var(--muted)]">${(m.size_bytes / 1024).toFixed(0)} KB</p>
+        </div>
+        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button class="copy-url-btn w-7 h-7 rounded-full bg-white shadow flex items-center justify-center" data-url="${m.url}" title="Copy URL"><i data-lucide="link" class="w-3.5 h-3.5"></i></button>
+          <button class="delete-media-btn w-7 h-7 rounded-full bg-white shadow flex items-center justify-center text-red-600" data-id="${m.id}" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>`).join("");
+    initIcons();
+  }
+
+  (async () => {
+    await renderAdminShell("media");
+    await loadMedia();
+
+    document.getElementById("media-search").addEventListener("input", debounce(loadMedia, 300));
+
+    document.getElementById("media-upload-input").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        await adminPost("/admin/media/upload", formData, { isFormData: true });
+        adminToast("Uploaded successfully.");
+        loadMedia();
+      } catch (err) {
+        adminToast(err.message, true);
+      }
+      e.target.value = "";
+    });
+
+    document.getElementById("media-grid").addEventListener("click", async (e) => {
+      const copyBtn = e.target.closest(".copy-url-btn");
+      const delBtn = e.target.closest(".delete-media-btn");
+      if (copyBtn) {
+        navigator.clipboard?.writeText(location.origin + copyBtn.dataset.url);
+        adminToast("URL copied to clipboard.");
+      }
+      if (delBtn) {
+        if (!confirm("Delete this image? Pages using it will show a broken image.")) return;
+        try {
+          await adminDelete(`/admin/media/${delBtn.dataset.id}`);
+          adminToast("Deleted successfully.");
+          loadMedia();
+        } catch (err) {
+          adminToast(err.message, true);
+        }
+      }
+    });
+  })();
+</script>
+</body>
+</html>

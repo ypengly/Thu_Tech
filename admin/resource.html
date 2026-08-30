@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title id="page-title">Content | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar">
+      <h1 class="font-display font-semibold text-lg" id="topbar-title">Content</h1>
+      <a href="/index.html" target="_blank" class="text-sm text-[var(--muted)] hover:text-blue-600 inline-flex items-center gap-1.5">View Website <i data-lucide="external-link" class="w-3.5 h-3.5"></i></a>
+    </header>
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading…</div>
+    <main id="admin-main" class="admin-content hidden">
+      <div id="resource-container"></div>
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/resource-crud.js"></script>
+<script>
+  (async () => {
+    const type = new URLSearchParams(window.location.search).get("type");
+    await renderAdminShell(type);
+    if (!type) {
+      document.getElementById("resource-container").innerHTML = `<div class="card p-8 text-center text-red-600">No resource type specified.</div>`;
+      return;
+    }
+    try {
+      await renderResourceList(type, document.getElementById("resource-container"));
+    } catch (err) {
+      document.getElementById("resource-container").innerHTML = `<div class="card p-8 text-center text-red-600">${err.message}</div>`;
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Job Applications | Thu Tech com Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="admin-body">
+<div class="admin-layout">
+  <aside id="admin-shell"></aside>
+  <div>
+    <header id="admin-topbar"><h1 class="font-display font-semibold text-lg">Job Applications</h1></header>
+    <div id="admin-loading" class="admin-content text-center text-[var(--muted)] py-20">Loading…</div>
+    <main id="admin-main" class="admin-content hidden">
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <select id="status-filter" class="field-input" style="width:auto">
+          <option value="">All statuses</option>
+          <option value="new">New</option>
+          <option value="reviewing">Reviewing</option>
+          <option value="shortlisted">Shortlisted</option>
+          <option value="interview">Interview</option>
+          <option value="rejected">Rejected</option>
+          <option value="hired">Hired</option>
+        </select>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="admin-table">
+          <thead><tr><th>Applicant</th><th>Position</th><th>Email</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+          <tbody id="apps-body"></tbody>
+        </table>
+      </div>
+      <div id="apps-empty" class="hidden text-center py-16 text-[var(--muted)]">No applications yet.</div>
+    </main>
+  </div>
+</div>
+
+<div id="detail-overlay" class="admin-modal-overlay hidden"><div class="admin-modal" id="detail-modal"></div></div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  function fmtDate(d) { return new Date(d).toLocaleString(); }
+  const STATUSES = ["new", "reviewing", "shortlisted", "interview", "rejected", "hired"];
+
+  async function loadApps() {
+    const status = document.getElementById("status-filter").value;
+    const params = new URLSearchParams({ pageSize: 50 });
+    if (status) params.set("status", status);
+    const { data } = await adminGet(`/admin/applications?${params.toString()}`);
+    const body = document.getElementById("apps-body");
+    document.getElementById("apps-empty").classList.toggle("hidden", data.length > 0);
+    body.innerHTML = data.map((a) => `
+      <tr class="cursor-pointer view-row" data-id="${a.id}">
+        <td class="font-medium">${a.applicant_name}</td>
+        <td>${a.position_title || "—"}</td>
+        <td>${a.email}</td>
+        <td>${fmtDate(a.created_at)}</td>
+        <td><span class="status-pill status-${a.status === 'new' ? 'new' : a.status === 'hired' ? 'published' : a.status === 'rejected' ? 'archived' : 'draft'}">${a.status}</span></td>
+        <td class="text-right"><button class="text-xs text-red-600 hover:underline delete-btn" data-id="${a.id}">Delete</button></td>
+      </tr>`).join("");
+  }
+
+  async function openApp(id) {
+    const { data: a } = await adminGet(`/admin/applications/${id}`);
+    const modal = document.getElementById("detail-modal");
+    modal.innerHTML = `
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 class="font-display font-semibold text-lg">${a.applicant_name}</h2>
+        <button id="detail-close-btn" class="p-1.5 text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-3 text-sm">
+        <p><strong>Position:</strong> ${a.position_title || "—"}</p>
+        <p><strong>Email:</strong> <a href="mailto:${a.email}" class="text-blue-600">${a.email}</a></p>
+        ${a.phone ? `<p><strong>Phone:</strong> ${a.phone}</p>` : ""}
+        ${a.portfolio_url ? `<p><strong>Portfolio:</strong> <a href="${a.portfolio_url}" target="_blank" class="text-blue-600">${a.portfolio_url}</a></p>` : ""}
+        <p><strong>Submitted:</strong> ${fmtDate(a.created_at)}</p>
+        <div class="mt-4 p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">${a.message}</div>
+        ${a.resume_url ? `<a href="/api/admin/applications/${a.id}/resume" class="btn btn-outline btn-sm mt-2"><i data-lucide="download" class="w-4 h-4"></i> Download Resume</a>` : `<p class="text-xs text-[var(--muted)]">No resume attached.</p>`}
+        <div class="mt-4">
+          <label class="field-label">Status</label>
+          <select id="app-status-select" class="field-input">
+            ${STATUSES.map((s) => `<option value="${s}" ${s === a.status ? "selected" : ""}>${s}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+        <button id="save-status-btn" class="btn btn-primary btn-sm">Save Status</button>
+      </div>`;
+    document.getElementById("detail-overlay").classList.remove("hidden");
+    initIcons();
+    document.getElementById("detail-close-btn").addEventListener("click", closeDetail);
+    document.getElementById("save-status-btn").addEventListener("click", async () => {
+      const status = document.getElementById("app-status-select").value;
+      await adminPatch(`/admin/applications/${id}/status`, { status });
+      adminToast("Status updated.");
+      closeDetail();
+      loadApps();
+    });
+  }
+  function closeDetail() { document.getElementById("detail-overlay").classList.add("hidden"); }
+
+  (async () => {
+    await renderAdminShell("applications");
+    await loadApps();
+    document.getElementById("status-filter").addEventListener("change", loadApps);
+    document.getElementById("detail-overlay").addEventListener("click", (e) => { if (e.target.id === "detail-overlay") closeDetail(); });
+    document.getElementById("apps-body").addEventListener("click", async (e) => {
+      const delBtn = e.target.closest(".delete-btn");
+      if (delBtn) {
+        e.stopPropagation();
+        if (!confirm("Delete this application?")) return;
+        await adminDelete(`/admin/applications/${delBtn.dataset.id}`);
+        adminToast("Deleted.");
+        loadApps();
+        return;
+      }
+      const row = e.target.closest(".view-row");
+      if (row) openApp(row.dataset.id);
+    });
+
+    const deepLinkId = new URLSearchParams(window.location.search).get("id");
+    if (deepLinkId) openApp(deepLinkId);
+  })();
+</script>
+</body>
+</html>

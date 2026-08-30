@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title id="page-title">Service | Thu Tech com</title>
+<meta id="page-description" name="description" content="Explore this Thu Tech com service in detail." />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="loading-screen" class="loading-screen">
+  <svg class="spin-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
+    <circle cx="22" cy="22" r="18" stroke="#E5E7EB" stroke-width="4"/>
+    <path d="M22 4a18 18 0 0 1 18 18" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+</div>
+<a href="#main" class="skip-link">Skip to content</a>
+
+<main id="main">
+<div id="service-content"></div>
+
+<div id="service-not-found" class="section-pad hidden">
+  <div class="container-max text-center">
+    <h1 class="font-display text-3xl font-bold mb-4">Service Not Found</h1>
+    <p class="text-[var(--muted)] mb-8">We couldn't find the service you're looking for.</p>
+    <a href="services.html" class="btn btn-primary">Back to Services</a>
+  </div>
+</div>
+</main>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="js/api-client.js"></script>
+<script src="js/main.js"></script>
+<script src="js/components.js"></script>
+<script>
+document.addEventListener("site-content-ready", () => {
+  const id = getSlugFromLocation("services");
+  const service = SITE_CONTENT.services.find(s => s.id === id);
+  const container = document.getElementById("service-content");
+
+  if (!service) {
+    document.getElementById("service-not-found").classList.remove("hidden");
+  } else {
+    document.getElementById("page-title").textContent = service.title + " | Thu Tech com";
+    document.getElementById("page-description").setAttribute("content", service.shortDescription);
+
+    const idx = SITE_CONTENT.services.findIndex(s => s.id === id);
+
+    container.innerHTML = `
+      <section class="gradient-hero pt-16 pb-16 lg:pt-20 lg:pb-20">
+        <div class="container-max grid lg:grid-cols-2 gap-12 items-center">
+          <div class="reveal">
+            <a href="services.html" class="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--muted)] hover:text-blue-600 mb-6"><i data-lucide="arrow-left" class="w-4 h-4"></i> All Services</a>
+            <div class="icon-tile mb-5" data-tone="${idx % 3 === 1 ? 'red' : ''}"><i data-lucide="${service.icon}" class="w-7 h-7"></i></div>
+            <h1 class="font-display text-4xl sm:text-5xl font-extrabold mb-5">${service.title}</h1>
+            <p class="text-lg text-[var(--muted)] leading-relaxed mb-8">${service.shortDescription}</p>
+            <a href="contact.html" class="btn btn-primary">Start a Project <i data-lucide="arrow-right" class="w-4 h-4"></i></a>
+          </div>
+          <div class="rounded-3xl bg-gradient-to-br from-blue-600 to-blue-800 aspect-[4/3] flex items-center justify-center shadow-xl reveal reveal-delay-1">
+            <i data-lucide="${service.icon}" class="w-24 h-24 text-white/70"></i>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-pad">
+        <div class="container-max grid md:grid-cols-2 gap-6">
+          <div class="card p-8 reveal">
+            <div class="icon-tile mb-5" data-tone="red"><i data-lucide="alert-circle" class="w-6 h-6"></i></div>
+            <h2 class="font-display text-2xl font-bold mb-4">Problems We Solve</h2>
+            <ul class="space-y-3">
+              ${service.problems.map(p => `<li class="flex gap-3 text-[var(--muted)] leading-relaxed"><i data-lucide="x-circle" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>${p}</li>`).join("")}
+            </ul>
+          </div>
+          <div class="card p-8 reveal reveal-delay-1">
+            <div class="icon-tile mb-5"><i data-lucide="package-check" class="w-6 h-6"></i></div>
+            <h2 class="font-display text-2xl font-bold mb-4">What We Provide</h2>
+            <ul class="space-y-3">
+              ${service.provide.map(p => `<li class="flex gap-3 text-[var(--muted)] leading-relaxed"><i data-lucide="check-circle-2" class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"></i>${p}</li>`).join("")}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-pad bg-[var(--bg-light)]">
+        <div class="container-max">
+          <div class="max-w-2xl mx-auto text-center reveal">
+            <span class="eyebrow">Benefits</span>
+            <h2 class="font-display text-3xl font-bold mt-4">Why It's Worth Doing</h2>
+          </div>
+          <div class="grid sm:grid-cols-3 gap-5 mt-12">
+            ${service.benefits.map((b, i) => `
+              <div class="card p-6 text-center reveal reveal-delay-${i + 1}">
+                <div class="icon-tile mx-auto mb-4"><i data-lucide="star" class="w-6 h-6"></i></div>
+                <p class="text-sm text-[var(--muted)] leading-relaxed">${b}</p>
+              </div>`).join("")}
+          </div>
+        </div>
+      </section>
+
+      <section class="section-pad">
+        <div class="container-max">
+          <div class="max-w-2xl mx-auto text-center reveal mb-12">
+            <span class="eyebrow">Our Process</span>
+            <h2 class="font-display text-3xl font-bold mt-4">01 — 05: How We Deliver This Service</h2>
+          </div>
+          <div class="timeline-track grid lg:grid-cols-5 gap-8 lg:gap-4">
+            ${SITE_CONTENT.processSteps.slice(0, 5).map((p, i) => {
+              const titles = { "01":"Understand","02":"Plan","03":"Build","04":"Launch","05":"Support" };
+              return `
+              <div class="relative pl-16 lg:pl-0 lg:text-center reveal reveal-delay-${(i % 4) + 1}">
+                <div class="absolute lg:static lg:mx-auto left-0 top-0 w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-display font-bold text-lg mb-4">${p.number}</div>
+                <h3 class="font-semibold mb-1.5 mt-0 lg:mt-4">${titles[p.number]}</h3>
+                <p class="text-sm text-[var(--muted)] leading-relaxed">${p.description}</p>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+      </section>
+
+      <section class="section-pad bg-[var(--bg-light)]">
+        <div class="container-max max-w-3xl">
+          <div class="text-center reveal mb-10">
+            <span class="eyebrow">FAQ</span>
+            <h2 class="font-display text-3xl font-bold mt-4">Frequently Asked Questions</h2>
+          </div>
+          <div id="service-faq-accordion" class="reveal">
+            ${service.faqs.map((f, i) => `
+              <div class="accordion-item ${i === 0 ? 'open' : ''}">
+                <button class="accordion-trigger" aria-expanded="${i === 0}">
+                  <span>${f.q}</span>
+                  <i data-lucide="chevron-down" class="chev w-5 h-5"></i>
+                </button>
+                <div class="accordion-panel"><div class="accordion-panel-inner">${f.a}</div></div>
+              </div>`).join("")}
+          </div>
+        </div>
+      </section>
+
+      <section class="section-pad">
+        <div class="container-max">
+          <div class="rounded-3xl bg-blue-600 relative overflow-hidden px-8 py-14 sm:px-16 text-center reveal">
+            <div class="absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full"></div>
+            <h2 class="font-display text-3xl font-bold text-white relative z-10">Ready to Get Started With ${service.title}?</h2>
+            <p class="text-blue-100 mt-4 max-w-xl mx-auto relative z-10">Tell us about your project and we'll get back to you with next steps.</p>
+            <div class="mt-8 flex flex-wrap justify-center gap-4 relative z-10">
+              <a href="contact.html" class="btn btn-white">Contact Us</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    initIcons();
+    initScrollReveal();
+    initAccordion("#service-faq-accordion");
+  }
+});
+</script>
+</body>
+</html>
